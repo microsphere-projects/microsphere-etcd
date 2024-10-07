@@ -27,6 +27,7 @@
         <spring-cloud-dependencies.version>2021.0.7</spring-cloud-dependencies.version>
         <!-- Third-party versions -->
         <jetcd.version>0.7.5</jetcd.version>
+        <reactor.version>3.3.15.RELEASE</reactor.version>
     </properties>
 
     <dependencyManagement>
@@ -93,6 +94,12 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- reactor -->
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-core</artifactId>
+                <version>${reactor.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

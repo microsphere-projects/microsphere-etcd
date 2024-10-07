@@ -21,9 +21,13 @@ import io.etcd.jetcd.Client;
 import io.etcd.jetcd.ClientBuilder;
 import io.microsphere.etcd.spring.cloud.client.EtcdClientProperties;
 import io.microsphere.etcd.spring.cloud.client.discovery.EtcdDiscoveryClient;
+import io.microsphere.etcd.spring.cloud.client.discovery.EtcdReactiveDiscoveryClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.client.ConditionalOnBlockingDiscoveryEnabled;
+import org.springframework.cloud.client.ConditionalOnDiscoveryEnabled;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.Set;
 
@@ -35,6 +39,7 @@ import java.util.Set;
  * @see EtcdDiscoveryClient
  * @since 1.0.0
  */
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(EtcdClientProperties.class)
 public class EtcdDiscoveryAutoConfiguration {
 
@@ -47,10 +52,33 @@ public class EtcdDiscoveryAutoConfiguration {
         return clientBuilder.build();
     }
 
-    @ConditionalOnMissingBean
-    @Bean
-    public EtcdDiscoveryClient etcdDiscoveryClient(Client client, EtcdClientProperties etcdClientProperties
-            , ObjectMapper objectMapper) {
-        return new EtcdDiscoveryClient(client, etcdClientProperties, objectMapper);
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnDiscoveryEnabled
+    @ConditionalOnBlockingDiscoveryEnabled
+    protected static class EtcdDiscoveryClientConfiguration {
+
+        @ConditionalOnMissingBean
+        @Bean
+        public EtcdDiscoveryClient etcdDiscoveryClient(Client client, EtcdClientProperties etcdClientProperties
+                , ObjectMapper objectMapper) {
+            return new EtcdDiscoveryClient(client, etcdClientProperties, objectMapper);
+        }
+    }
+
+
+
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnDiscoveryEnabled
+    @ConditionalOnBlockingDiscoveryEnabled
+    protected static class EtcdReactiveDiscoveryClientConfiguration {
+
+        @ConditionalOnMissingBean
+        @Bean
+        public EtcdReactiveDiscoveryClient etcdDiscoveryClient(Client client, EtcdClientProperties etcdClientProperties
+                , ObjectMapper objectMapper) {
+            return new EtcdReactiveDiscoveryClient(client, etcdClientProperties, objectMapper);
+        }
     }
 }

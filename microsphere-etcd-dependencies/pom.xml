@@ -26,7 +26,6 @@
                 <artifactId>microsphere-etcd-spring-cloud</artifactId>
                 <version>${revision}</version>
             </dependency>
-
         </dependencies>
     </dependencyManagement>
 </project>

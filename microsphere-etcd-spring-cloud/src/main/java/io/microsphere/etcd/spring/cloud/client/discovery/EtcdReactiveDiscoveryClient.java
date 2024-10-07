@@ -21,28 +21,24 @@ import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.KeyValue;
 import io.microsphere.etcd.spring.cloud.client.EtcdClientProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.client.discovery.ReactiveDiscoveryClient;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.microsphere.etcd.spring.cloud.client.util.KVClientUtils.resolveServiceId;
 import static io.microsphere.etcd.spring.cloud.client.util.KVClientUtils.toByteSequence;
 
 /**
- * Spring Cloud {@link DiscoveryClient} for etcd
+ * Spring Cloud {@link ReactiveDiscoveryClient} for etcd
  *
- * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
- * @see DiscoveryClient
+ * @author <a href="mailto:walklown@gmail.com">Walklown</a>
+ * @see ReactiveDiscoveryClient
  * @since 1.0.0
  */
-public class EtcdDiscoveryClient implements DiscoveryClient, DisposableBean {
-
-    private static final Logger logger = LoggerFactory.getLogger(EtcdDiscoveryClient.class);
+public class EtcdReactiveDiscoveryClient implements ReactiveDiscoveryClient, DisposableBean {
 
     private final EtcdClientProperties etcdClientProperties;
 
@@ -50,7 +46,8 @@ public class EtcdDiscoveryClient implements DiscoveryClient, DisposableBean {
 
     private final EtcdClientAdapter etcdClientAdapter;
 
-    public EtcdDiscoveryClient(Client client, EtcdClientProperties etcdClientProperties, ObjectMapper objectMapper) {
+    public EtcdReactiveDiscoveryClient(Client client, EtcdClientProperties etcdClientProperties,
+                                       ObjectMapper objectMapper) {
         this.etcdClientAdapter = new EtcdClientAdapter(client, objectMapper);
         this.etcdClientProperties = etcdClientProperties;
         this.serviceInstancesCache = new ServiceInstancesCache(etcdClientProperties.getRootPath(), etcdClientAdapter);
@@ -62,21 +59,24 @@ public class EtcdDiscoveryClient implements DiscoveryClient, DisposableBean {
     }
 
     @Override
-    public List<ServiceInstance> getInstances(String serviceId) {
-        return serviceInstancesCache.getValue(serviceId);
+    public Flux<ServiceInstance> getInstances(String serviceId) {
+        return Flux.defer(() -> Flux.fromIterable(serviceInstancesCache.getValue(serviceId)));
     }
 
     @Override
-    public List<String> getServices() {
+    public Flux<String> getServices() {
         String rootPath = etcdClientProperties.getRootPath();
         ByteSequence key = toByteSequence(rootPath);
-        List<KeyValue> keyValues = etcdClientAdapter.getKeyValues(key, true);
-        return keyValues.stream().map(KeyValue::getKey)
+        return Flux.defer(() -> {
+                    List<KeyValue> keyValues = etcdClientAdapter.getKeyValues(key, true);
+                    return Flux.fromIterable(keyValues);
+                })
+                .map(KeyValue::getKey)
                 .map(ByteSequence::toString)
                 .map(path -> resolveServiceId(path, rootPath))
-                .distinct()
-                .collect(Collectors.toList());
+                .distinct();
     }
+
 
     @Override
     public void probe() {
