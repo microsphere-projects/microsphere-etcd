@@ -18,6 +18,7 @@ package io.microsphere.etcd.spring.cloud.client.util;
 
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.KV;
+import io.microsphere.util.StringUtils;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -45,6 +46,11 @@ public class KVClientUtils {
 
     public static String buildServicePath(String rootPath, String serviceId) {
         return rootPath + "/" + serviceId + "/";
+    }
+
+    public static String buildInstanceId(String rootPath, String serviceId, String serviceInstancePath) {
+        String servicePath = buildServicePath(rootPath, serviceId);
+        return StringUtils.substringAfter(serviceInstancePath, servicePath);
     }
 
     public static String resolveServiceId(String serviceInstancePath, String rootPath) {
